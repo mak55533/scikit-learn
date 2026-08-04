@@ -1,0 +1,18 @@
+diff --git a/sklearn/cluster/__init__.py b/sklearn/cluster/__init__.py
+index 9ba72d341..40b89ea0d 100644
+--- a/sklearn/cluster/__init__.py
++++ b/sklearn/cluster/__init__.py
+@@ -23,6 +23,7 @@ from ._optics import (
+ )
+ from ._bicluster import SpectralBiclustering, SpectralCoclustering
+ from ._birch import Birch
++from ._hdbscan.hdbscan import HDBSCAN
+ 
+ __all__ = [
+     "AffinityPropagation",
+@@ -51,4 +52,5 @@ __all__ = [
+     "ward_tree",
+     "SpectralBiclustering",
+     "SpectralCoclustering",
++    "HDBSCAN",
+ ]

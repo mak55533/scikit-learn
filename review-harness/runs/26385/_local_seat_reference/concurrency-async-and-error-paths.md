@@ -1,0 +1,13 @@
+### F1 — `_weighted_cluster_center` miscounts clusters when missing (`-3`) samples exist, driving an empty-cluster iteration that crashes
+severity: medium
+evidence: `sklearn/cluster/_hdbscan/hdbscan.py:895` — `n_clusters = len(set(self.labels_) - {-1, -2})` subtracts only the noise (`-1`) and infinite (`-2`) sentinels, not the missing-data sentinel `-3`. `labels_` can contain `-3` (set at `hdbscan.py:843` via `_OUTLIER_ENCODING["missing"]["label"]`). The following loop `for idx in range(n_clusters)` (line 907) assumes indices `0..n_clusters-1` are all real cluster ids, and `_get_clusters`/`_do_labelling` label real clusters contiguously as `0..K-1`.
+scenario: "Fit with a non-precomputed metric, `store_centers` set (e.g. `'centroid'`), and an X containing at least one all-NaN row → `-3` survives in `set(labels_)`, so `n_clusters = K+1`; the loop reaches `idx = K`, whose `mask = self.labels_ == K` selects zero samples, and `np.average(data, weights=strength, axis=0)` over the empty slice raises `ZeroDivisionError: Weights sum to zero`, aborting `fit` after `labels_`/`probabilities_` were already assigned."
+contract: Exclude the missing sentinel too: compute `n_clusters = len(set(self.labels_) - {-1, -2, -3})` (mirroring the `-1, -2, -3` outlier set documented for `labels_`).
+instances: single-instance
+
+### F2 — Non-finite input handled via a broad `except ValueError` that also swallows unrelated validation failures
+severity: low
+evidence: `sklearn/cluster/_hdbscan/hdbscan.py:709-714` — `try: _assert_all_finite(...) except ValueError: all_finite = False`. The `except ValueError` is used as a boolean probe for non-finiteness, but `_assert_all_finite` (and any exception it wraps) raises `ValueError` for reasons other than the presence of inf/NaN; any such `ValueError` is silently reinterpreted as "data contains non-finite values," steering execution into the outlier-remapping branch instead of surfacing the real error.
+scenario: "A validation condition inside `_assert_all_finite` raises `ValueError` for a reason unrelated to inf/NaN → the estimator silently treats the data as non-finite, drops rows via `_get_finite_row_indices`, and produces a clustering on a silently-reduced dataset rather than reporting the failure."
+contract: Detect non-finiteness explicitly (e.g. branch on `np.isfinite(...).all()` / an inf/NaN check) rather than catching `ValueError` and inferring non-finiteness from the exception.
+instances: single-instance

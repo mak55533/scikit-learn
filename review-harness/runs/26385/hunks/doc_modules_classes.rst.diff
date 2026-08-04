@@ -1,0 +1,12 @@
+diff --git a/doc/modules/classes.rst b/doc/modules/classes.rst
+index dc13c292c..67326ed5f 100644
+--- a/doc/modules/classes.rst
++++ b/doc/modules/classes.rst
+@@ -104,6 +104,7 @@ Classes
+    cluster.AgglomerativeClustering
+    cluster.Birch
+    cluster.DBSCAN
++   cluster.HDBSCAN
+    cluster.FeatureAgglomeration
+    cluster.KMeans
+    cluster.BisectingKMeans
